@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Blog</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <h1>Dodaj post</h1>
+    <form id="postForm" class="form">
+      <label for="title">Tytuł:</label>
+      <input type="text" id="title" name="title" required /><br /><br />
+      <label for="content">Treść:</label>
+      <textarea id="content" name="content" required></textarea><br /><br />
+      <label>Data:</label>
+      <span id="datetime"></span><br />
+      <button type="submit">Dodaj</button>
+    </form>
+
+    <!-- kontener na wyświetlanie postów -->
+    <h2>Posty</h2>
+    <div id="posts" class="posts-container"></div>
+    <div id="pagination" class="pagination"></div>
+
+    <script>
+      // obsługa formularza do wpisywania postów
+      document
+        .getElementById("postForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          //pobieram wartości
+          const title = document.getElementById("title").value;
+          const content = document.getElementById("content").value;
+          const created_at = new Date().toISOString().split("T")[0];
+
+          // wysyłanie danych na serwer
+          const response = await fetch("/posts/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title, content, created_at }),
+          });
+
+          //   Czyszczę formularz
+          if (response.ok) {
+            document.getElementById("title").value = "";
+            document.getElementById("content").value = "";
+            // document.getElementById("created_at").value = "";
+
+            loadPosts();
+          }
+        });
+
+      let currentPage = 1;
+      const postsPerPage = 3;
+      setInterval(updateDate, 1000);
+
+      // definicje funkcji buttonów
+
+      async function loadPosts() {
+        // pobieram dane (fetch defaultowo ma metode GET) - prośba wysyłana do endpointa /posts/
+        try {
+          const response = await fetch("/posts/");
+          if (!response.ok) {
+            throw new Error(
+              `Błąd przy pobieraniu postów: ${response.status} ${response.statusText}`
+            );
+          }
+
+          const posts = await response.json(); //konwersja do json
+          posts.sort((a, b) => b.id - a.id);
+          console.log("Pobrane posty: ", posts);
+
+          displayPosts(posts, currentPage);
+          setupPagination(posts);
+
+          console.log("Zakończono ładowanie postów.");
+          //   console.log(new Date(created_at));
+        } catch (error) {
+          console.error("Wystąpił błąd podczas ładowania postów:", error);
+        }
+      }
+
+      function displayPosts(posts, page) {
+        const start = (page - 1) * postsPerPage;
+        const end = start + postsPerPage;
+        const paginatedPosts = posts.slice(start, end);
+
+        // kontener na posty
+        const postsDiv = document.getElementById("posts");
+        postsDiv.innerHTML = ""; //czyszczenie
+
+        // dla każdego nowego posta tworzony postDiv (ma tytuł, zawartość i przyciski)
+        paginatedPosts.forEach((post) => {
+          const postDiv = document.createElement("div");
+          postDiv.className = "post";
+
+          // formatowanie daty
+          const createdAtDate = new Date(post.created_at);
+          const formattedDate = `${createdAtDate
+            .getDate()
+            .toString()
+            .padStart(2, "0")}-${(createdAtDate.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}-${createdAtDate.getFullYear()}`;
+
+          postDiv.innerHTML = `
+                <h3>${post.title}</h3>
+                <p class="post-content">${post.content}</p>
+                <p class="post-date">Data utworzenia: ${formattedDate}</p>
+                <button onclick="editPost(${post.id}, this)">Edytuj</button>
+                <button onclick="deletePost(${post.id})">Usuń</button>
+                <button class="d-none" onclick="savePost(${post.id}, this)">Zapisz</button>
+                <button class="d-none" onclick="cancelEdit(${post.id}, this)">Anuluj</button>
+            `;
+          postsDiv.appendChild(postDiv);
+        });
+      }
+
+      function setupPagination(posts) {
+        const pageCount = Math.ceil(posts.length / postsPerPage);
+        const paginationDiv = document.getElementById("pagination");
+        paginationDiv.innerHTML = "";
+
+
+        for (let i = 1; i <= pageCount; i++) {
+          const button = document.createElement("button");
+          button.textContent = i;
+          button.onclick = () => {
+            currentPage = i;
+            displayPosts(posts, currentPage);
+          };
+          
+          if (i == currentPage) {
+            button.classList.add("active");
+          }
+          paginationDiv.appendChild(button);
+        }
+      }
+
+      function editPost(id, editButton) {
+        // znalezienie najbliższego konteneru (div), który zawiera editButton
+        const postDiv = editButton.closest("div");
+        const title = postDiv.querySelector("h3");
+        const content = postDiv.querySelector("p");
+        const saveButton = postDiv.querySelector("button[onclick^='savePost']");
+        const cancelButton = postDiv.querySelector(
+          "button[onclick^='cancelEdit']"
+        );
+
+        title.contentEditable = "true";
+        content.contentEditable = "true";
+        title.classList.add("editable");
+        content.classList.add("editable");
+        editButton.classList.add("d-none");
+        saveButton.classList.remove("d-none");
+        cancelButton.classList.remove("d-none");
+
+        // Dodanie ramek
+        title.style.border = "1px solid #ccc";
+        content.style.border = "1px solid #ccc";
+      }
+
+      function cancelEdit(id, cancelButton) {
+        const postDiv = cancelButton.closest("div");
+        const title = postDiv.querySelector("h3");
+        const content = postDiv.querySelector("p");
+        const editButton = postDiv.querySelector("button[onclick^='editPost']");
+        const saveButton = postDiv.querySelector("button[onclick^='savePost']");
+
+        title.contentEditable = "false";
+        content.contentEditable = "false";
+        title.classList.remove("editable");
+        content.classList.remove("editable");
+        editButton.classList.remove("d-none");
+        saveButton.classList.add("d-none");
+        cancelButton.classList.add("d-none");
+
+        // Usunięcie ramek
+        title.style.border = "none";
+        content.style.border = "none";
+
+        loadPosts();
+      }
+
+      async function savePost(id, saveButton) {
+        const postDiv = saveButton.closest("div");
+        const titleElem = postDiv.querySelector("h3");
+        const contentElem = postDiv.querySelector("p");
+        const editButton = postDiv.querySelector("button[onclick^='editPost']");
+        const cancelButton = postDiv.querySelector(
+          "button[onclick^='cancelEdit']"
+        );
+
+        const title = titleElem.textContent;
+        const content = contentElem.textContent;
+        // backtick, bo mamy ${} - kwestia formatowania
+        const response = await fetch(`/posts/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ title, content }),
+        });
+
+        if (response.ok) {
+          titleElem.contentEditable = "false";
+          contentElem.contentEditable = "false";
+          titleElem.classList.remove("editable");
+          contentElem.classList.remove("editable");
+          saveButton.classList.add("d-none");
+          cancelButton.classList.add("d-none");
+          editButton.classList.remove("d-none");
+          loadPosts();
+        }
+      }
+
+      async function deletePost(id) {
+        const response = await fetch(`/posts/${id}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          loadPosts();
+        }
+      }
+
+      loadPosts();
+
+      function updateDate() {
+        const now = new Date();
+        const currentDate = now.toLocaleDateString();
+        document.querySelector("#datetime").textContent = currentDate;
+      }
+    </script>
+  </body>
+</html>

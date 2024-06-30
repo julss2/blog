@@ -1,0 +1,100 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 80%;
+  margin: auto;
+  overflow: hidden;
+}
+h1,
+h2 {
+  color: #333;
+}
+form {
+  background: #fff;
+  padding: 20px;
+  margin-top: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-width: 600px; /* Ograniczenie szerokości formularza */
+  margin: 0 auto; /* Wyśrodkowanie formularza */
+}
+input[type="text"],
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  box-sizing: border-box;
+}
+button {
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+button:hover {
+  background: #555;
+}
+#posts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post {
+  background: #fff;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.post h3 {
+  font-size: 20px;
+  margin: 0;
+  color: #333;
+}
+.post .post-content {
+  color: #333;
+  font-size: 16px;
+}
+.post .post-date {
+  color: #666;
+  font-size: 14px;
+}
+.post-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.editable {
+  border: 1px solid #ccc;
+  padding: 5px;
+}
+
+.d-none {
+  display: none;
+}
+
+#pagination {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+#pagination button {
+  padding: 10px 20px;
+  margin: 0 5px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+#pagination button:hover {
+  background-color: #0056b3;
+}
+
+#pagination button.active {
+  background-color: #555;
+}
